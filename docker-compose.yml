@@ -1,0 +1,70 @@
+services:
+  # Backend WebSocket Signaling Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"  # HTTP (optional static serving)
+      - "8081:8081"  # WebSocket
+    environment:
+      - PORT=8080
+      - WS_PORT=8081
+      - STUN_SERVER=stun:stun.l.google.com:19302
+      # Uncomment and configure if using TURN:
+      # - TURN_SERVER=turn:coturn:3478
+      # - TURN_USERNAME=myuser
+      # - TURN_PASSWORD=mypassword
+    networks:
+      - m-voice-net
+    restart: unless-stopped
+
+  # Frontend (served via nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - m-voice-net
+    restart: unless-stopped
+
+  # TURN Server (Coturn) - OPTIONAL, uncomment for production NAT traversal
+  # WARNING: TURN adds latency (media relay). Use only as fallback.
+  # coturn:
+  #   image: coturn/coturn:latest
+  #   ports:
+  #     - "3478:3478/tcp"   # STUN/TURN
+  #     - "3478:3478/udp"
+  #     - "49152-65535:49152-65535/udp"  # TURN relay ports
+  #   environment:
+  #     - DETECT_EXTERNAL_IP=yes
+  #     - DETECT_RELAY_IP=yes
+  #     - LISTENING_PORT=3478
+  #     - MIN_PORT=49152
+  #     - MAX_PORT=65535
+  #     - REALM=m-voice.local
+  #     - USERNAME=myuser
+  #     - PASSWORD=mypassword
+  #   networks:
+  #     - m-voice-net
+  #   restart: unless-stopped
+  #   command:
+  #     - "-n"
+  #     - "--log-file=stdout"
+  #     - "--external-ip=$$(detect-external-ip)"
+  #     - "--listening-port=3478"
+  #     - "--min-port=49152"
+  #     - "--max-port=65535"
+  #     - "--fingerprint"
+  #     - "--lt-cred-mech"
+  #     - "--realm=m-voice.local"
+  #     - "--user=myuser:mypassword"
+
+networks:
+  m-voice-net:
+    driver: bridge
+
