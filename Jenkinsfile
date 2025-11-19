@@ -47,7 +47,7 @@ pipeline {
             steps {
                 sshagent(['server2-ssh']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no root@178.18.246.166 '
+                        ssh -o StrictHostKeyChecking=no root@207.180.226.93 '
                             cd /root/mvoice &&
                             docker compose pull &&
                             docker compose up -d
