@@ -5,8 +5,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"  # HTTP (optional static serving)
-      - "8081:8081"  # WebSocket
+      - "5010:8080"  # HTTP (optional static serving)
+      - "5011:8081"  # WebSocket
     environment:
       - PORT=8080
       - WS_PORT=8081

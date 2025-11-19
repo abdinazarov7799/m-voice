@@ -103,7 +103,7 @@ npm install
 
 Create `backend/.env` (or use defaults):
 ```env
-PORT=8080
+PORT=5010
 WS_PORT=8081
 STUN_SERVER=stun:stun.l.google.com:19302
 # Optional TURN (commented by default)
@@ -119,7 +119,7 @@ STUN_SERVER=stun:stun.l.google.com:19302
 cd backend
 npm run dev
 ```
-Backend runs on `http://localhost:8080` with WebSocket on `ws://localhost:8081`
+Backend runs on `http://localhost:5010` with WebSocket on `ws://localhost:8081`
 
 **Terminal 2 - Frontend:**
 ```bash
