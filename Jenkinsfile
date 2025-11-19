@@ -46,13 +46,13 @@ pipeline {
         stage('Deploy to Server 2') {
             steps {
                 sshagent(['server2-ssh']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no root@SERVER_2_IP "
-                        cd /root/mvoice &&
-                        docker compose pull &&
-                        docker compose up -d
-                    "
-                    '''
+                    sh """
+                        ssh -o StrictHostKeyChecking=no root@178.18.246.166 '
+                            cd /root/mvoice &&
+                            docker compose pull &&
+                            docker compose up -d
+                        '
+                    """
                 }
             }
         }
