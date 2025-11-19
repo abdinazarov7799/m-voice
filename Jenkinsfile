@@ -4,7 +4,7 @@ pipeline {
     environment {
         REGISTRY = "178.18.246.166:8081/repository/docker-hosted"
         IMAGE_NAME = "mvoice"
-        CREDS = credentials('nexus-docker-creds')
+        CREDS = credentials('nexus_docker_creds')
     }
 
     stages {
@@ -45,7 +45,7 @@ pipeline {
 
         stage('Deploy to Server 2') {
             steps {
-                sshagent(['deploy-server-creds']) {
+                sshagent(['server2-ssh']) {
                     sh '''
                     ssh -o StrictHostKeyChecking=no root@SERVER_2_IP "
                         cd /root/mvoice &&
