@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "178.18.246.166:8081/repository/docker-hosted"
+        REGISTRY = "178.18.246.166:5000"
         IMAGE_NAME = "mvoice"
         CREDS = credentials('nexus_docker_creds')
     }
@@ -56,7 +56,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
