@@ -47,8 +47,19 @@ export class WebSocketAdapter implements ISignalingService {
     }
 
     if (this.ws) {
-      this.ws.close();
+      // Remove event handlers to prevent callbacks after disconnect
+      this.ws.onopen = null;
+      this.ws.onmessage = null;
+      this.ws.onerror = null;
+      this.ws.onclose = null;
+      
+      // Close if not already closed
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        this.ws.close();
+      }
+      
       this.ws = null;
+      console.log('[WebSocketAdapter] Disconnected and cleaned up');
     }
   }
 

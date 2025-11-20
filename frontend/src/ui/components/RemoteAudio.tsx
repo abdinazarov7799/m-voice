@@ -15,11 +15,32 @@ export const RemoteAudio: React.FC<RemoteAudioProps> = ({
     const audioRef = useRef<HTMLAudioElement>(null);
 
     useEffect(() => {
-        const stream = roomManager.getRemoteStream(participantId);
-        if (audioRef.current && stream) {
-            audioRef.current.srcObject = stream;
-            audioRef.current.play().catch((e) => console.error(`Failed to play audio for ${participantId}:`, e));
-        }
+        let isSubscribed = true;
+
+        const updateStream = () => {
+            const stream = roomManager.getRemoteStream(participantId);
+            if (audioRef.current && stream && isSubscribed) {
+                console.log(`[RemoteAudio] Setting stream for ${participantId}`);
+                audioRef.current.srcObject = stream;
+                audioRef.current.play().catch((e) => console.error(`Failed to play audio for ${participantId}:`, e));
+            }
+        };
+
+        // Try to get stream immediately
+        updateStream();
+
+        // Listen for state changes to catch when stream becomes available
+        const unsubscribe = roomManager.onStateChange(() => {
+            updateStream();
+        });
+
+        return () => {
+            isSubscribed = false;
+            unsubscribe();
+            if (audioRef.current) {
+                audioRef.current.srcObject = null;
+            }
+        };
     }, [participantId, roomManager]);
 
     useEffect(() => {

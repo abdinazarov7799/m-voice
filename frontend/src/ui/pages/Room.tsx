@@ -26,34 +26,44 @@ export const Room: React.FC = () => {
       return;
     }
 
+    let isCleanedUp = false;
+
     const joinRoom = async () => {
       try {
         setIsJoining(true);
         setError(null);
         await roomManager.joinRoom(roomId);
-        setIsJoining(false);
+        if (!isCleanedUp) {
+          setIsJoining(false);
+        }
       } catch (err) {
         console.error('Failed to join room:', err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Failed to join room. Please check microphone permissions.',
-        );
-        setIsJoining(false);
+        if (!isCleanedUp) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Failed to join room. Please check microphone permissions.',
+          );
+          setIsJoining(false);
+        }
       }
     };
 
     joinRoom();
 
     const unsubscribe = roomManager.onStateChange((state) => {
-      setRoomState(state);
+      if (!isCleanedUp) {
+        setRoomState(state);
+      }
     });
 
     return () => {
+      isCleanedUp = true;
       unsubscribe();
       roomManager.leaveRoom();
     };
-  }, [roomId, roomManager, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   const handleLeave = () => {
     roomManager.leaveRoom();

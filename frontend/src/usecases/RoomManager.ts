@@ -26,6 +26,12 @@ export class RoomManager implements IRoomManager {
 
   async joinRoom(roomId: string, displayName?: string): Promise<void> {
     try {
+      // Check if already in a room
+      if (this.currentRoomId) {
+        console.warn('[RoomManager] Already in a room, leaving first');
+        this.leaveRoom();
+      }
+
       this.currentRoomId = roomId;
 
       this.localStream = await navigator.mediaDevices.getUserMedia({
@@ -57,6 +63,14 @@ export class RoomManager implements IRoomManager {
   }
 
   leaveRoom(): void {
+    // Prevent multiple cleanup calls
+    if (!this.room && !this.localStream && !this.currentRoomId) {
+      console.log('[RoomManager] Already left room, skipping cleanup');
+      return;
+    }
+
+    console.log('[RoomManager] Leaving room...');
+
     if (this.room) {
       this.signalingService.leaveRoom(this.room.localParticipantId);
     }
@@ -80,7 +94,7 @@ export class RoomManager implements IRoomManager {
     this.currentRoomId = null;
     this.remoteStreams.clear();
 
-    console.log('[RoomManager] Left room');
+    console.log('[RoomManager] Left room successfully');
     this.notifyStateChange();
   }
 
@@ -315,15 +329,20 @@ export class RoomManager implements IRoomManager {
   }
 
   private setupAudioLevelMonitoring(): void {
-    if (!this.localStream) return;
+    if (!this.localStream) {
+      console.warn('[RoomManager] No local stream for audio level monitoring');
+      return;
+    }
 
     try {
       this.audioContext = new AudioContext();
       const source = this.audioContext.createMediaStreamSource(this.localStream);
       this.audioAnalyser = this.audioContext.createAnalyser();
       this.audioAnalyser.fftSize = 256;
+      this.audioAnalyser.smoothingTimeConstant = 0.8;
       source.connect(this.audioAnalyser);
 
+      console.log('[RoomManager] Audio level monitoring started');
       this.startAudioLevelPolling();
     } catch (error) {
       console.error('[RoomManager] Error setting up audio level monitoring:', error);
@@ -331,24 +350,39 @@ export class RoomManager implements IRoomManager {
   }
 
   private startAudioLevelPolling(): void {
-    if (!this.audioAnalyser) return;
+    if (!this.audioAnalyser) {
+      console.warn('[RoomManager] No audio analyser for polling');
+      return;
+    }
 
     const dataArray = new Uint8Array(this.audioAnalyser.frequencyBinCount);
+    let frameCount = 0;
 
     const poll = () => {
       if (!this.audioAnalyser || !this.localStream) return;
 
       this.audioAnalyser.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-      this.localAudioLevel = Math.min(average / 255, 1);
+      const normalizedLevel = Math.min(average / 128, 1); // Normalize to 0-1 range
 
-      if (Math.abs(this.localAudioLevel - this.getRoomState().localAudioLevel) > 0.05) {
+      const prevLevel = this.localAudioLevel;
+      this.localAudioLevel = normalizedLevel;
+
+      // Log occasionally for debugging
+      if (frameCount % 60 === 0) {
+        console.log(`[RoomManager] Audio level: ${(normalizedLevel * 100).toFixed(1)}%`);
+      }
+      frameCount++;
+
+      // Update state if change is significant
+      if (Math.abs(normalizedLevel - prevLevel) > 0.05) {
         this.notifyStateChange();
       }
 
       requestAnimationFrame(poll);
     };
 
+    console.log('[RoomManager] Starting audio level polling');
     poll();
   }
 
