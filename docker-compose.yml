@@ -1,5 +1,6 @@
 services:
   backend:
+    image: 178.18.246.166:5000/mvoice-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -18,6 +19,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: 178.18.246.166:5000/mvoice-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
