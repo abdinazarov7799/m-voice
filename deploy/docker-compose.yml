@@ -1,0 +1,49 @@
+services:
+  backend:
+    image: 178.18.246.166:5000/mvoice-backend:latest
+    ports:
+      - "5010:8080"
+      - "5011:8081"
+    environment:
+      - PORT=8080
+      - WS_PORT=8081
+      - STUN_SERVER=stun:stun.l.google.com:19302
+      - TURN_SERVER=turn:coturn:3478
+      - TURN_USERNAME=myuser
+      - TURN_PASSWORD=mypassword
+    networks:
+      - m-voice-net
+    restart: unless-stopped
+
+  frontend:
+    image: 178.18.246.166:5000/mvoice-frontend:latest
+    ports:
+      - "5012:80"
+    depends_on:
+      - backend
+    networks:
+      - m-voice-net
+    restart: unless-stopped
+
+#  coturn:
+#    image: coturn/coturn
+#    ports:
+#      - "3478:3478/tcp"
+#      - "3478:3478/udp"
+#      - "49152-49252:49152-49252/udp"
+#    environment:
+#      - DETECT_EXTERNAL_IP=yes
+#      - DETECT_RELAY_IP=yes
+#      - LISTENING_PORT=3478
+#      - MIN_PORT=49152
+#      - MAX_PORT=49252
+#      - REALM=m-voice.local
+#      - USERNAME=myuser
+#      - PASSWORD=mypassword
+#    networks:
+#      - m-voice-net
+#    restart: unless-stopped
+
+networks:
+  m-voice-net:
+    driver: bridge
