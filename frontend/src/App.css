@@ -1,4 +1,17 @@
-/* Global Styles */
+:root {
+  --primary-color: #FEA000;
+  --primary-hover: #e69000;
+  --bg-color: #0a0a0f;
+  --text-color: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --secondary-bg: #1a1a24;
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  --glass-bg: rgba(26, 26, 36, 0.6);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --card-radius: 16px;
+}
 
 * {
   box-sizing: border-box;
@@ -11,6 +24,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 code {
@@ -18,8 +33,49 @@ code {
     monospace;
 }
 
-/* Utility classes */
 .btn {
   font-family: inherit;
+  padding: 0.75em 1.5em;
+  border-radius: 10px;
+  border: none;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #ff8c00 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #e67e00 100%);
+}
+
+.btn-secondary {
+  background: var(--glass-bg);
+  color: var(--text-color);
+  border: var(--glass-border);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  background: rgba(26, 26, 36, 0.8);
+  border-color: var(--primary-color);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+}

@@ -1,16 +1,3 @@
-/**
- * Use Case: Relay Signal
- * 
- * Handles relaying WebRTC signaling messages (offer, answer, ICE candidates) between peers.
- * The server acts as a signaling relay only; it does not process media.
- * 
- * SOLID Principles Applied:
- * - Single Responsibility: Only validates and prepares signaling messages for relay
- * - Open/Closed: Easy to extend with new message types without modifying existing code
- * 
- * Clean Architecture: This use case knows nothing about WebSockets or transport layer.
- * It operates on domain types only.
- */
 import {
   OfferMessage,
   AnswerMessage,
@@ -30,25 +17,11 @@ export interface RelaySignalResult {
   error?: string;
 }
 
-/**
- * RelaySignalUseCase validates and prepares signaling messages for relay.
- * 
- * Note: The actual sending is handled by the infrastructure layer (WebSocket server).
- * This use case only validates the business logic (e.g., recipient exists in room).
- */
 export class RelaySignalUseCase {
   constructor(private readonly roomRepository: IRoomRepository) {}
 
-  /**
-   * Execute the relay signal use case.
-   * 
-   * @param roomId The room where participants are communicating
-   * @param message The signaling message to relay
-   * @returns RelaySignalResult with validation status
-   */
   execute(roomId: string, message: SignalingMessage): RelaySignalResult {
     try {
-      // Validate message type and extract recipientId
       let recipientId: string;
       
       if (isOfferMessage(message)) {
@@ -66,7 +39,6 @@ export class RelaySignalUseCase {
         };
       }
 
-      // Validate room exists
       const room = this.roomRepository.findRoom(roomId);
       if (!room) {
         return {
@@ -77,7 +49,6 @@ export class RelaySignalUseCase {
         };
       }
 
-      // Validate sender exists in room
       const sender = room.getParticipant(message.from);
       if (!sender) {
         return {
@@ -88,7 +59,6 @@ export class RelaySignalUseCase {
         };
       }
 
-      // Validate recipient exists in room
       const recipient = room.getParticipant(recipientId);
       if (!recipient) {
         return {
@@ -99,15 +69,13 @@ export class RelaySignalUseCase {
         };
       }
 
-      // Validation passed; message is ready to be relayed
       return {
         success: true,
         recipientId,
         message,
       };
     } catch (error) {
-      // Extract recipientId for error case
-      const recipientId = 
+      const recipientId =
         isOfferMessage(message) || isAnswerMessage(message) || isIceCandidateMessage(message)
           ? message.to
           : '';
@@ -121,4 +89,3 @@ export class RelaySignalUseCase {
     }
   }
 }
-

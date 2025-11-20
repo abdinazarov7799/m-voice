@@ -1,15 +1,3 @@
-/**
- * Infrastructure Adapter: WebSocket Adapter
- * 
- * Concrete implementation of ISignalingService using browser WebSocket API.
- * This adapter bridges the gap between the domain layer and the browser's WebSocket.
- * 
- * SOLID Principles Applied:
- * - Dependency Inversion: Implements ISignalingService from domain layer
- * - Single Responsibility: Only handles WebSocket communication
- * 
- * Clean Architecture: This is an infrastructure adapter that implements a domain interface.
- */
 import { ISignalingService, SignalingMessage } from '../domain/interfaces/ISignalingService';
 
 export class WebSocketAdapter implements ISignalingService {
@@ -20,9 +8,6 @@ export class WebSocketAdapter implements ISignalingService {
   private readonly maxReconnectAttempts = 5;
   private reconnectTimeout: number | null = null;
 
-  /**
-   * Connect to the signaling server.
-   */
   async connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
@@ -55,9 +40,6 @@ export class WebSocketAdapter implements ISignalingService {
     });
   }
 
-  /**
-   * Disconnect from the signaling server.
-   */
   disconnect(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -70,9 +52,6 @@ export class WebSocketAdapter implements ISignalingService {
     }
   }
 
-  /**
-   * Join a room.
-   */
   joinRoom(roomId: string, displayName?: string): void {
     this.sendMessage({
       type: 'join',
@@ -81,9 +60,6 @@ export class WebSocketAdapter implements ISignalingService {
     });
   }
 
-  /**
-   * Send an offer to a peer.
-   */
   sendOffer(to: string, from: string, sdp: string): void {
     this.sendMessage({
       type: 'offer',
@@ -93,9 +69,6 @@ export class WebSocketAdapter implements ISignalingService {
     });
   }
 
-  /**
-   * Send an answer to a peer.
-   */
   sendAnswer(to: string, from: string, sdp: string): void {
     this.sendMessage({
       type: 'answer',
@@ -105,9 +78,6 @@ export class WebSocketAdapter implements ISignalingService {
     });
   }
 
-  /**
-   * Send an ICE candidate to a peer.
-   */
   sendIceCandidate(to: string, from: string, candidate: RTCIceCandidateInit): void {
     this.sendMessage({
       type: 'ice-candidate',
@@ -117,9 +87,6 @@ export class WebSocketAdapter implements ISignalingService {
     });
   }
 
-  /**
-   * Leave the current room.
-   */
   leaveRoom(participantId: string): void {
     this.sendMessage({
       type: 'leave',
@@ -127,23 +94,14 @@ export class WebSocketAdapter implements ISignalingService {
     });
   }
 
-  /**
-   * Register a callback for incoming signaling messages.
-   */
   onMessage(callback: (message: SignalingMessage) => void): void {
     this.messageCallback = callback;
   }
 
-  /**
-   * Register a callback for connection state changes.
-   */
   onConnectionStateChange(callback: (connected: boolean) => void): void {
     this.connectionStateCallback = callback;
   }
 
-  /**
-   * Handle incoming WebSocket message.
-   */
   private handleMessage(data: string): void {
     try {
       const message = JSON.parse(data) as SignalingMessage;
@@ -156,9 +114,6 @@ export class WebSocketAdapter implements ISignalingService {
     }
   }
 
-  /**
-   * Send a message through the WebSocket.
-   */
   private sendMessage(message: unknown): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
@@ -167,9 +122,6 @@ export class WebSocketAdapter implements ISignalingService {
     }
   }
 
-  /**
-   * Attempt to reconnect to the server.
-   */
   private attemptReconnect(url: string): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('[WebSocketAdapter] Max reconnection attempts reached');

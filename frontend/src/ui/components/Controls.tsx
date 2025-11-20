@@ -1,8 +1,3 @@
-/**
- * UI Component: Controls
- * 
- * Audio controls for the room (mute/unmute).
- */
 import React from 'react';
 import './Controls.css';
 

@@ -23,12 +23,10 @@
     "lint": "npm run lint:backend && npm run lint:frontend",
     "format:backend": "cd backend && npm run format",
     "format:frontend": "cd frontend && npm run format",
-    "format": "npm run format:backend && npm run format:frontend",
-    "prepare": "husky install"
+    "format": "npm run format:backend && npm run format:frontend"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "husky": "^8.0.3"
+    "concurrently": "^8.2.2"
   },
   "keywords": [
     "webrtc",
@@ -45,4 +43,3 @@
     "node": ">=18.0.0"
   }
 }
-

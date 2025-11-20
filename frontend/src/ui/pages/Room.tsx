@@ -1,12 +1,3 @@
-/**
- * UI Component: Room Page
- * 
- * The main room page where voice chat happens.
- * Displays participants, audio controls, and handles WebRTC connections.
- * 
- * Clean Architecture: This is a presentation layer component.
- * It depends on the IRoomManager interface (not concrete implementation).
- */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRoomManager } from '../../di/container';
@@ -14,6 +5,8 @@ import { RoomState } from '../../domain/interfaces/IRoomManager';
 import { ParticipantList } from '../components/ParticipantList';
 import { Controls } from '../components/Controls';
 import { AudioLevelIndicator } from '../components/AudioLevelIndicator';
+import { DeviceSelector } from '../components/DeviceSelector';
+import { RemoteAudio } from '../components/RemoteAudio';
 import './Room.css';
 
 export const Room: React.FC = () => {
@@ -24,10 +17,9 @@ export const Room: React.FC = () => {
   const [roomState, setRoomState] = useState<RoomState>(roomManager.getRoomState());
   const [error, setError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [outputDeviceId, setOutputDeviceId] = useState<string>('');
 
-  /**
-   * Join room on mount.
-   */
   useEffect(() => {
     if (!roomId) {
       navigate('/');
@@ -53,36 +45,25 @@ export const Room: React.FC = () => {
 
     joinRoom();
 
-    // Subscribe to room state changes
     const unsubscribe = roomManager.onStateChange((state) => {
       setRoomState(state);
     });
 
-    // Leave room on unmount
     return () => {
       unsubscribe();
       roomManager.leaveRoom();
     };
   }, [roomId, roomManager, navigate]);
 
-  /**
-   * Handle leave button click.
-   */
   const handleLeave = () => {
     roomManager.leaveRoom();
     navigate('/');
   };
 
-  /**
-   * Handle mute toggle.
-   */
   const handleToggleMute = () => {
     roomManager.toggleMute();
   };
 
-  /**
-   * Copy room URL to clipboard.
-   */
   const handleCopyRoomUrl = async () => {
     const url = window.location.href;
     try {
@@ -94,7 +75,20 @@ export const Room: React.FC = () => {
     }
   };
 
-  // Error state
+  const handleInputDeviceChange = async (deviceId: string) => {
+    try {
+      await roomManager.switchInputDevice(deviceId);
+    } catch (err) {
+      console.error('Failed to switch input device:', err);
+      alert('Failed to switch microphone');
+    }
+  };
+
+  const handleOutputDeviceChange = (deviceId: string) => {
+    setOutputDeviceId(deviceId);
+    roomManager.setOutputDevice(deviceId);
+  };
+
   if (error) {
     return (
       <div className="room-container">
@@ -109,7 +103,6 @@ export const Room: React.FC = () => {
     );
   }
 
-  // Joining state
   if (isJoining) {
     return (
       <div className="room-container">
@@ -127,7 +120,7 @@ export const Room: React.FC = () => {
       <div className="room-content">
         <header className="room-header">
           <div className="room-info">
-            <h1>🎤 Voice Room</h1>
+            <h1>🎤 Medias voice chat</h1>
             <div className="room-id-container">
               <span className="room-id">Room: {roomId}</span>
               <button
@@ -141,14 +134,32 @@ export const Room: React.FC = () => {
               </button>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={handleLeave}
-          >
-            Leave Room
-          </button>
+          <div className="header-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              {showSettings ? 'Hide Settings' : '⚙️ Settings'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleLeave}
+            >
+              Leave Room
+            </button>
+          </div>
         </header>
+
+        {showSettings && (
+          <section className="settings-section">
+            <DeviceSelector
+              onInputDeviceChange={handleInputDeviceChange}
+              onOutputDeviceChange={handleOutputDeviceChange}
+            />
+          </section>
+        )}
 
         <main className="room-main">
           <section className="participants-section">
@@ -165,6 +176,17 @@ export const Room: React.FC = () => {
             <h3>Your Audio</h3>
             <AudioLevelIndicator level={roomState.localAudioLevel} />
           </section>
+
+          {roomState.participants
+            .filter((p) => p.id !== roomState.localParticipantId)
+            .map((p) => (
+              <RemoteAudio
+                key={p.id}
+                participantId={p.id}
+                roomManager={roomManager}
+                outputDeviceId={outputDeviceId}
+              />
+            ))}
         </main>
 
         <footer className="room-footer">

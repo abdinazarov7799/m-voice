@@ -1,8 +1,3 @@
-/**
- * Main App Component
- * 
- * Sets up routing and dependency injection.
- */
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { DIContainer } from './di/container';

@@ -1,17 +1,17 @@
-/* Room Page Styles */
-
 .room-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #0a0a0f 100%);
   padding: 1rem;
 }
 
 .room-content {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--glass-shadow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -23,13 +23,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, rgba(254, 160, 0, 0.1) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .room-info h1 {
   margin: 0 0 0.5rem 0;
   font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffffff 0%, var(--primary-color) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .room-id-container {
@@ -40,39 +45,39 @@
 
 .room-id {
   font-family: 'Courier New', monospace;
-  font-size: 0.95rem;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 0.25rem 0.75rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.4rem 0.8rem;
   border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
 }
 
 .btn-icon {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.6rem;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 1.25rem;
-  transition: background 0.2s;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
 }
 
 .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(254, 160, 0, 0.2);
+  border-color: var(--primary-color);
 }
 
-.btn-danger {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 0.5rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
-.btn-danger:hover {
-  background: #dc2626;
+.settings-section {
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .room-main {
@@ -82,28 +87,33 @@
 }
 
 .participants-section h2 {
-  margin: 0 0 1rem 0;
-  color: #1f2937;
-  font-size: 1.25rem;
+  margin: 0 0 1.5rem 0;
+  color: var(--text-color);
+  font-size: 1.3rem;
+  font-weight: 600;
 }
 
 .audio-section {
   margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
 }
 
 .audio-section h3 {
   margin: 0 0 1rem 0;
-  color: #1f2937;
+  color: var(--text-color);
   font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .room-footer {
   padding: 1.5rem 2rem;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Loading state */
 .loading-container,
 .error-container {
   display: flex;
@@ -113,13 +123,14 @@
   min-height: 100vh;
   text-align: center;
   color: white;
+  background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #0a0a0f 100%);
 }
 
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -138,7 +149,7 @@
 
 .loading-hint {
   font-size: 0.95rem;
-  opacity: 0.8;
+  color: var(--text-secondary);
 }
 
 .error-container h2 {
@@ -149,9 +160,9 @@
 .error-container p {
   font-size: 1.1rem;
   margin: 0 0 2rem 0;
+  color: var(--text-secondary);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .room-header {
     flex-direction: column;
@@ -170,5 +181,9 @@
   .room-main {
     padding: 1.5rem;
   }
-}
 
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

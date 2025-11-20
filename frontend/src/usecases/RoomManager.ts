@@ -1,17 +1,3 @@
-/**
- * Use Case: Room Manager
- * 
- * Orchestrates all room-related operations: joining, leaving, managing peers,
- * handling signaling, and managing WebRTC connections.
- * 
- * SOLID Principles Applied:
- * - Single Responsibility: Manages room state and peer connections
- * - Dependency Inversion: Depends on abstractions (ISignalingService, IRTCService)
- * - Open/Closed: Easy to extend with new features without modifying core logic
- * 
- * Clean Architecture: This is a use case that orchestrates domain entities and
- * infrastructure adapters. It has no knowledge of UI frameworks (React).
- */
 import { ISignalingService, SignalingMessage } from '../domain/interfaces/ISignalingService';
 import { IRTCService } from '../domain/interfaces/IRTCService';
 import { IRoomManager, RoomState } from '../domain/interfaces/IRoomManager';
@@ -20,6 +6,7 @@ import { Participant } from '../domain/entities/Participant';
 
 export class RoomManager implements IRoomManager {
   private room: Room | null = null;
+  private currentRoomId: string | null = null;
   private localStream: MediaStream | null = null;
   private remoteStreams: Map<string, MediaStream> = new Map();
   private stateChangeCallbacks: Set<(state: RoomState) => void> = new Set();
@@ -32,17 +19,15 @@ export class RoomManager implements IRoomManager {
     private readonly signalingService: ISignalingService,
     private readonly rtcService: IRTCService,
     private readonly wsUrl: string,
-    private readonly stunServers: string[],
+    private readonly iceServers: RTCIceServer[],
   ) {
     this.setupSignalingHandlers();
   }
 
-  /**
-   * Join a room.
-   */
   async joinRoom(roomId: string, displayName?: string): Promise<void> {
     try {
-      // Get microphone access
+      this.currentRoomId = roomId;
+
       this.localStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -54,60 +39,48 @@ export class RoomManager implements IRoomManager {
 
       console.log('[RoomManager] Obtained microphone access');
 
-      // Setup audio level monitoring
       this.setupAudioLevelMonitoring();
 
-      // Connect to signaling server
       await this.signalingService.connect(this.wsUrl);
       console.log('[RoomManager] Connected to signaling server');
 
-      // Join the room
       this.signalingService.joinRoom(roomId, displayName);
       console.log(`[RoomManager] Joining room: ${roomId}`);
     } catch (error) {
       console.error('[RoomManager] Error joining room:', error);
+      this.currentRoomId = null;
       throw error;
     }
   }
 
-  /**
-   * Leave the current room.
-   */
   leaveRoom(): void {
     if (this.room) {
       this.signalingService.leaveRoom(this.room.localParticipantId);
     }
 
-    // Close all peer connections
     this.rtcService.closeAllConnections();
 
-    // Stop local stream
     if (this.localStream) {
       this.localStream.getTracks().forEach((track) => track.stop());
       this.localStream = null;
     }
 
-    // Clean up audio monitoring
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
       this.audioAnalyser = null;
     }
 
-    // Disconnect from signaling server
     this.signalingService.disconnect();
 
-    // Clear state
     this.room = null;
+    this.currentRoomId = null;
     this.remoteStreams.clear();
 
     console.log('[RoomManager] Left room');
     this.notifyStateChange();
   }
 
-  /**
-   * Toggle mute/unmute local audio.
-   */
   toggleMute(): void {
     if (!this.localStream) return;
 
@@ -120,9 +93,6 @@ export class RoomManager implements IRoomManager {
     this.notifyStateChange();
   }
 
-  /**
-   * Get the current room state.
-   */
   getRoomState(): RoomState {
     return {
       roomId: this.room?.id || '',
@@ -134,9 +104,6 @@ export class RoomManager implements IRoomManager {
     };
   }
 
-  /**
-   * Subscribe to room state changes.
-   */
   onStateChange(callback: (state: RoomState) => void): () => void {
     this.stateChangeCallbacks.add(callback);
     return () => {
@@ -144,23 +111,39 @@ export class RoomManager implements IRoomManager {
     };
   }
 
-  /**
-   * Get the local audio stream.
-   */
   getLocalStream(): MediaStream | null {
     return this.localStream;
   }
 
-  /**
-   * Get a remote audio stream by participant ID.
-   */
   getRemoteStream(participantId: string): MediaStream | null {
     return this.remoteStreams.get(participantId) || null;
   }
 
-  /**
-   * Setup signaling message handlers.
-   */
+  async switchInputDevice(deviceId: string): Promise<void> {
+    if (this.localStream) {
+      this.localStream.getTracks().forEach((track) => track.stop());
+    }
+
+    try {
+      this.localStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: deviceId },
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: false,
+      });
+    } catch (error) {
+      console.error('[RoomManager] Error switching input device:', error);
+      throw error;
+    }
+  }
+
+  async setOutputDevice(deviceId: string): Promise<void> {
+    console.log(`[RoomManager] Set output device preference to ${deviceId}`);
+  }
+
   private setupSignalingHandlers(): void {
     this.signalingService.onMessage((message: SignalingMessage) => {
       this.handleSignalingMessage(message);
@@ -173,9 +156,6 @@ export class RoomManager implements IRoomManager {
     });
   }
 
-  /**
-   * Handle incoming signaling messages.
-   */
   private handleSignalingMessage(message: SignalingMessage): void {
     switch (message.type) {
       case 'joined':
@@ -204,31 +184,28 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  /**
-   * Handle 'joined' message (successful room join).
-   */
   private handleJoined(message: { youId: string; participants: Array<{ id: string; displayName?: string }> }): void {
     console.log(`[RoomManager] Joined as ${message.youId}`);
 
-    // Create room instance
-    this.room = new Room(this.room?.id || '', message.youId);
+    if (!this.currentRoomId) {
+      console.error('[RoomManager] Received joined message but no roomId stored');
+      return;
+    }
 
-    // Add local participant
+    this.room = new Room(this.currentRoomId, message.youId);
+
     const localParticipant = new Participant(message.youId, undefined, true);
     this.room.addParticipant(localParticipant);
 
-    // Add existing participants
     message.participants.forEach((p) => {
       const participant = Participant.fromJSON(p, false);
       this.room!.addParticipant(participant);
     });
 
-    // Set local participant ID in RTC adapter (for polite peer strategy)
     if ('setLocalParticipantId' in this.rtcService) {
       (this.rtcService as any).setLocalParticipantId(message.youId);
     }
 
-    // Create peer connections and send offers to existing participants
     message.participants.forEach((p) => {
       this.createPeerConnectionAndOffer(p.id);
     });
@@ -236,9 +213,6 @@ export class RoomManager implements IRoomManager {
     this.notifyStateChange();
   }
 
-  /**
-   * Handle 'participant-joined' message (new participant joined).
-   */
   private handleParticipantJoined(message: { participant: { id: string; displayName?: string } }): void {
     if (!this.room) return;
 
@@ -247,15 +221,9 @@ export class RoomManager implements IRoomManager {
     const participant = Participant.fromJSON(message.participant, false);
     this.room.addParticipant(participant);
 
-    // Don't create offer here; the new participant will send offers to us
-    // We'll create peer connection when we receive their offer
-
     this.notifyStateChange();
   }
 
-  /**
-   * Handle 'participant-left' message.
-   */
   private handleParticipantLeft(message: { id: string }): void {
     if (!this.room) return;
 
@@ -268,26 +236,20 @@ export class RoomManager implements IRoomManager {
     this.notifyStateChange();
   }
 
-  /**
-   * Handle 'offer' message.
-   */
   private async handleOffer(message: { from: string; to: string; sdp: string }): Promise<void> {
     if (!this.room || !this.localStream) return;
 
     console.log(`[RoomManager] Received offer from ${message.from}`);
 
-    // Create peer connection if it doesn't exist
     if (!this.rtcService.getConnectionState(message.from)) {
       this.createPeerConnection(message.from);
       this.rtcService.addLocalStream(message.from, this.localStream);
     }
 
     try {
-      // Handle offer and create answer
       const answerSdp = await this.rtcService.handleOffer(message.from, message.sdp);
 
       if (answerSdp) {
-        // Send answer back
         this.signalingService.sendAnswer(message.from, message.to, answerSdp);
       }
     } catch (error) {
@@ -295,9 +257,6 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  /**
-   * Handle 'answer' message.
-   */
   private async handleAnswer(message: { from: string; to: string; sdp: string }): Promise<void> {
     console.log(`[RoomManager] Received answer from ${message.from}`);
 
@@ -308,9 +267,6 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  /**
-   * Handle 'ice-candidate' message.
-   */
   private async handleIceCandidate(message: { from: string; to: string; candidate: RTCIceCandidateInit }): Promise<void> {
     try {
       await this.rtcService.addIceCandidate(message.from, message.candidate);
@@ -319,9 +275,6 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  /**
-   * Create a peer connection and send an offer.
-   */
   private async createPeerConnectionAndOffer(peerId: string): Promise<void> {
     if (!this.localStream || !this.room) return;
 
@@ -336,12 +289,9 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  /**
-   * Create a peer connection.
-   */
   private createPeerConnection(peerId: string): void {
     const config = {
-      iceServers: this.stunServers.map((url) => ({ urls: url })),
+      iceServers: this.iceServers,
     };
 
     this.rtcService.createPeerConnection(peerId, config, {
@@ -361,9 +311,6 @@ export class RoomManager implements IRoomManager {
     });
   }
 
-  /**
-   * Setup audio level monitoring.
-   */
   private setupAudioLevelMonitoring(): void {
     if (!this.localStream) return;
 
@@ -380,9 +327,6 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  /**
-   * Poll audio level.
-   */
   private startAudioLevelPolling(): void {
     if (!this.audioAnalyser) return;
 
@@ -395,7 +339,6 @@ export class RoomManager implements IRoomManager {
       const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
       this.localAudioLevel = Math.min(average / 255, 1);
 
-      // Notify if level changed significantly
       if (Math.abs(this.localAudioLevel - this.getRoomState().localAudioLevel) > 0.05) {
         this.notifyStateChange();
       }
@@ -406,9 +349,6 @@ export class RoomManager implements IRoomManager {
     poll();
   }
 
-  /**
-   * Notify all state change callbacks.
-   */
   private notifyStateChange(): void {
     const state = this.getRoomState();
     this.stateChangeCallbacks.forEach((callback) => callback(state));

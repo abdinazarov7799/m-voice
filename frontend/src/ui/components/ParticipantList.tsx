@@ -1,9 +1,3 @@
-/**
- * UI Component: Participant List
- * 
- * Displays a list of participants in the room.
- * Shows visual indicators for local user and connection status.
- */
 import React from 'react';
 import { Participant } from '../../domain/entities/Participant';
 import './ParticipantList.css';

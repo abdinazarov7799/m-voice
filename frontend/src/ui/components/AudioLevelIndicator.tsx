@@ -1,9 +1,3 @@
-/**
- * UI Component: Audio Level Indicator
- * 
- * Displays a visual indicator of audio input level (0-1).
- * Shows a horizontal bar that fills based on the audio level.
- */
 import React from 'react';
 import './AudioLevelIndicator.css';
 
@@ -12,16 +6,14 @@ interface AudioLevelIndicatorProps {
 }
 
 export const AudioLevelIndicator: React.FC<AudioLevelIndicatorProps> = ({ level }) => {
-  // Clamp level between 0 and 1
   const clampedLevel = Math.max(0, Math.min(1, level));
   const percentage = Math.round(clampedLevel * 100);
 
-  // Determine color based on level
   const getColor = (): string => {
-    if (percentage < 20) return '#6b7280'; // Gray (very quiet)
-    if (percentage < 50) return '#10b981'; // Green (good)
-    if (percentage < 80) return '#f59e0b'; // Orange (loud)
-    return '#ef4444'; // Red (very loud)
+    if (percentage < 20) return '#6b7280';
+    if (percentage < 50) return '#10b981';
+    if (percentage < 80) return '#f59e0b';
+    return '#ef4444';
   };
 
   return (
