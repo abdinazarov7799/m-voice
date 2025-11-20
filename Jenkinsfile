@@ -21,7 +21,7 @@ pipeline {
     }
 
     stages {
-        stage('📋 Initialization') {
+        stage('Initialization') {
             steps {
                 script {
                     echo "=========================================="
@@ -34,7 +34,7 @@ pipeline {
             }
         }
 
-        stage('🔍 Checkout') {
+        stage('Checkout') {
             steps {
                 script {
                     echo "Cloning repository..."
@@ -44,7 +44,7 @@ pipeline {
             }
         }
 
-        stage('🏗️ Build Images') {
+        stage('Build Images') {
             parallel {
                 stage('Build Frontend') {
                     steps {
@@ -71,7 +71,7 @@ pipeline {
             }
         }
 
-        stage('🔐 Registry Login') {
+        stage('Registry Login') {
             steps {
                 script {
                     echo "Logging into Nexus Registry..."
@@ -81,7 +81,7 @@ pipeline {
             }
         }
 
-        stage('📤 Push Images') {
+        stage('Push Images') {
             parallel {
                 stage('Push Frontend') {
                     steps {
@@ -106,7 +106,7 @@ pipeline {
             }
         }
 
-        stage('🚀 Deploy') {
+        stage('Deploy') {
             steps {
                 script {
                     echo "Deploying to production server..."
@@ -128,7 +128,7 @@ pipeline {
             }
         }
 
-        stage('🧹 Cleanup') {
+        stage('Cleanup') {
             steps {
                 script {
                     echo "Cleaning up local Docker images..."
