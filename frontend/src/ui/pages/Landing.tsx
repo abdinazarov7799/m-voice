@@ -35,7 +35,7 @@ export const Landing: React.FC = () => {
   return (
     <div className="landing-container">
       <div className="landing-content">
-        <h1 className="landing-title">Medias voice chat1</h1>
+        <h1 className="landing-title">Medias voice chat</h1>
         <p className="landing-subtitle">Realtime Voice Chat for Teams</p>
 
         <div className="landing-actions">
