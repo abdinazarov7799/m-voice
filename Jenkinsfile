@@ -114,10 +114,12 @@ pipeline {
                         sh """
                             ssh -o StrictHostKeyChecking=no root@207.180.226.93 '
                                 cd /root/m-voice &&
+                                echo "Logging into registry..." &&
+                                echo ${CREDS_PSW} | docker login ${REGISTRY} --username ${CREDS_USR} --password-stdin &&
                                 echo "Pulling latest images..." &&
                                 docker compose pull &&
                                 echo "Restarting services..." &&
-                                docker compose up -d &&
+                                docker compose up -d --force-recreate &&
                                 echo "Cleaning up old images..." &&
                                 docker image prune -f
                             '
