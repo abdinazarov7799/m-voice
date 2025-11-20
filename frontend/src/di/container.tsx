@@ -15,7 +15,7 @@ export const DIContainer: React.FC<DIContainerProps> = ({ children }) => {
     const signalingService = new WebSocketAdapter();
     const rtcService = new RTCAdapter();
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8081';
+    const wsUrl = import.meta.env.VITE_WS_URL || 'wss://voice.mediasolutions.uz/ws';
 
     const iceServers: RTCIceServer[] = [
       { urls: import.meta.env.VITE_STUN_SERVER || 'stun:stun.l.google.com:19302' },
