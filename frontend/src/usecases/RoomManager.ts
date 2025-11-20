@@ -44,6 +44,9 @@ export class RoomManager implements IRoomManager {
       await this.signalingService.connect(this.wsUrl);
       console.log('[RoomManager] Connected to signaling server');
 
+      // Small delay to ensure WebSocket is fully ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       this.signalingService.joinRoom(roomId, displayName);
       console.log(`[RoomManager] Joining room: ${roomId}`);
     } catch (error) {

@@ -10,6 +10,7 @@ interface PeerConnectionState {
   makingOffer: boolean;
   ignoreOffer: boolean;
   isSettingRemoteAnswerPending: boolean;
+  isNegotiating: boolean;
 }
 
 export class RTCAdapter implements IRTCService {
@@ -38,6 +39,7 @@ export class RTCAdapter implements IRTCService {
       makingOffer: false,
       ignoreOffer: false,
       isSettingRemoteAnswerPending: false,
+      isNegotiating: false,
     };
 
     this.peerConnections.set(peerId, state);
@@ -77,16 +79,9 @@ export class RTCAdapter implements IRTCService {
     };
 
     connection.onnegotiationneeded = async () => {
-      try {
-        state.makingOffer = true;
-        const offer = await connection.createOffer();
-        if (connection.signalingState !== 'stable') return;
-        await connection.setLocalDescription(offer);
-      } catch (error) {
-        console.error(`[RTCAdapter] Error during negotiation for ${peerId}:`, error);
-      } finally {
-        state.makingOffer = false;
-      }
+      // Negotiation is handled manually via createOffer() calls
+      // This event fires when tracks are added, but we handle offers explicitly
+      console.log(`[RTCAdapter] Negotiation needed for ${peerId} (handled externally)`);
     };
   }
 
@@ -110,8 +105,22 @@ export class RTCAdapter implements IRTCService {
       throw new Error(`No peer connection found for ${peerId}`);
     }
 
+    // Prevent concurrent negotiations
+    if (state.isNegotiating) {
+      console.warn(`[RTCAdapter] Already negotiating with ${peerId}, skipping`);
+      return '';
+    }
+
     try {
+      state.isNegotiating = true;
       state.makingOffer = true;
+
+      // Check if we're in a stable state
+      if (state.connection.signalingState !== 'stable') {
+        console.warn(`[RTCAdapter] Signaling state not stable for ${peerId}: ${state.connection.signalingState}`);
+        return '';
+      }
+
       const offer = await state.connection.createOffer({
         offerToReceiveAudio: true,
       });
@@ -122,6 +131,7 @@ export class RTCAdapter implements IRTCService {
       throw error;
     } finally {
       state.makingOffer = false;
+      state.isNegotiating = false;
     }
   }
 

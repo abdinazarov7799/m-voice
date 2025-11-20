@@ -53,6 +53,12 @@ export class WebSocketAdapter implements ISignalingService {
   }
 
   joinRoom(roomId: string, displayName?: string): void {
+    // Check if WebSocket is ready before sending
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.error('[WebSocketAdapter] Cannot join room: WebSocket not ready');
+      return;
+    }
+    
     this.sendMessage({
       type: 'join',
       roomId,
