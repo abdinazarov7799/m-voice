@@ -52,12 +52,12 @@ export class WebSocketAdapter implements ISignalingService {
       this.ws.onmessage = null;
       this.ws.onerror = null;
       this.ws.onclose = null;
-      
+
       // Close if not already closed
       if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
         this.ws.close();
       }
-      
+
       this.ws = null;
       console.log('[WebSocketAdapter] Disconnected and cleaned up');
     }
@@ -69,7 +69,7 @@ export class WebSocketAdapter implements ISignalingService {
       console.error('[WebSocketAdapter] Cannot join room: WebSocket not ready');
       return;
     }
-    
+
     this.sendMessage({
       type: 'join',
       roomId,
@@ -108,6 +108,14 @@ export class WebSocketAdapter implements ISignalingService {
     this.sendMessage({
       type: 'leave',
       from: participantId,
+    });
+  }
+
+  updateDisplayName(from: string, displayName: string): void {
+    this.sendMessage({
+      type: 'update-display-name',
+      from,
+      displayName,
     });
   }
 

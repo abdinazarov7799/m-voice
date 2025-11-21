@@ -27,5 +27,13 @@ export interface IRoomManager {
   switchInputDevice(deviceId: string): Promise<void>;
 
   setOutputDevice(deviceId: string): Promise<void>;
+
+  setRemotePeerVolume(peerId: string, volume: number): void;
+
+  getRemotePeerVolume(peerId: string): number;
+
+  updateDisplayName(displayName: string): void;
+
+  setMicrophoneGain(gain: number): void;
 }
 

@@ -14,13 +14,21 @@ export class RoomManager implements IRoomManager {
   private localAudioLevel = 0;
   private audioContext: AudioContext | null = null;
   private audioAnalyser: AnalyserNode | null = null;
+  private iceServers: RTCIceServer[] = [];
+  private peerVolumes: Map<string, number> = new Map(); // Store volume preferences
+  private readonly VOLUME_STORAGE_KEY = 'm-voice-peer-volumes';
+  private microphoneGain: number = 1.0;
+  private localGainNode: GainNode | null = null;
 
   constructor(
     private readonly signalingService: ISignalingService,
     private readonly rtcService: IRTCService,
     private readonly wsUrl: string,
-    private readonly iceServers: RTCIceServer[],
+    defaultIceServers: RTCIceServer[],
   ) {
+    this.iceServers = defaultIceServers;
+    this.loadVolumePreferences();
+    this.loadAudioSettings();
     this.setupSignalingHandlers();
   }
 
@@ -161,6 +169,73 @@ export class RoomManager implements IRoomManager {
     console.log(`[RoomManager] Set output device preference to ${deviceId}`);
   }
 
+  setRemotePeerVolume(peerId: string, volume: number): void {
+    if (this.rtcService.setPeerVolume) {
+      this.rtcService.setPeerVolume(peerId, volume);
+      this.peerVolumes.set(peerId, volume);
+      this.saveVolumePreferences();
+      console.log(`[RoomManager] Set volume for ${peerId} to ${volume}`);
+    }
+  }
+
+  getRemotePeerVolume(peerId: string): number {
+    if (this.rtcService.getPeerVolume) {
+      return this.rtcService.getPeerVolume(peerId);
+    }
+    return 1.0;
+  }
+
+  updateDisplayName(displayName: string): void {
+    if (!this.room) {
+      console.warn('[RoomManager] Cannot update display name: not in a room');
+      return;
+    }
+
+    this.signalingService.updateDisplayName(this.room.localParticipantId, displayName);
+    console.log(`[RoomManager] Updating display name to: "${displayName}"`);
+  }
+
+  setMicrophoneGain(gain: number): void {
+    this.microphoneGain = gain;
+    if (this.localGainNode) {
+      this.localGainNode.gain.value = gain;
+      console.log(`[RoomManager] Set microphone gain to ${Math.round(gain * 100)}%`);
+    }
+  }
+
+  private loadAudioSettings(): void {
+    try {
+      const gainStored = localStorage.getItem('m-voice-microphone-gain');
+      if (gainStored) {
+        this.microphoneGain = parseFloat(gainStored);
+      }
+    } catch (error) {
+      console.error('[RoomManager] Error loading audio settings:', error);
+    }
+  }
+
+  private loadVolumePreferences(): void {
+    try {
+      const stored = localStorage.getItem(this.VOLUME_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, number>;
+        this.peerVolumes = new Map(Object.entries(parsed));
+        console.log('[RoomManager] Loaded volume preferences:', this.peerVolumes);
+      }
+    } catch (error) {
+      console.error('[RoomManager] Error loading volume preferences:', error);
+    }
+  }
+
+  private saveVolumePreferences(): void {
+    try {
+      const obj = Object.fromEntries(this.peerVolumes);
+      localStorage.setItem(this.VOLUME_STORAGE_KEY, JSON.stringify(obj));
+    } catch (error) {
+      console.error('[RoomManager] Error saving volume preferences:', error);
+    }
+  }
+
   private setupSignalingHandlers(): void {
     this.signalingService.onMessage((message: SignalingMessage) => {
       this.handleSignalingMessage(message);
@@ -193,6 +268,9 @@ export class RoomManager implements IRoomManager {
       case 'ice-candidate':
         this.handleIceCandidate(message);
         break;
+      case 'display-name-updated':
+        this.handleDisplayNameUpdated(message);
+        break;
       case 'error':
         console.error('[RoomManager] Server error:', message.message);
         break;
@@ -201,12 +279,20 @@ export class RoomManager implements IRoomManager {
     }
   }
 
-  private handleJoined(message: { youId: string; participants: Array<{ id: string; displayName?: string }> }): void {
+  private handleJoined(message: { youId: string; participants: Array<{ id: string; displayName?: string }>; iceServers: RTCIceServer[] }): void {
     console.log(`[RoomManager] Joined as ${message.youId}`);
 
     if (!this.currentRoomId) {
       console.error('[RoomManager] Received joined message but no roomId stored');
       return;
+    }
+
+    // Use ICE servers from backend
+    if (message.iceServers && message.iceServers.length > 0) {
+      this.iceServers = message.iceServers;
+      console.log('[RoomManager] Using ICE servers from signaling server:', this.iceServers);
+    } else {
+      console.warn('[RoomManager] No ICE servers provided by server, using defaults');
     }
 
     this.room = new Room(this.currentRoomId, message.youId);
@@ -251,6 +337,18 @@ export class RoomManager implements IRoomManager {
     this.remoteStreams.delete(message.id);
 
     this.notifyStateChange();
+  }
+
+  private handleDisplayNameUpdated(message: { participantId: string; displayName: string }): void {
+    if (!this.room) return;
+
+    console.log(`[RoomManager] Display name updated for ${message.participantId}: "${message.displayName}"`);
+
+    const participant = this.room.getAllParticipants().find((p) => p.id === message.participantId);
+    if (participant) {
+      participant.setDisplayName(message.displayName);
+      this.notifyStateChange();
+    }
   }
 
   private async handleOffer(message: { from: string; to: string; sdp: string }): Promise<void> {
@@ -320,6 +418,14 @@ export class RoomManager implements IRoomManager {
       onTrack: (stream) => {
         console.log(`[RoomManager] Received remote stream from ${peerId}`);
         this.remoteStreams.set(peerId, stream);
+
+        // Apply saved volume preference if exists
+        const savedVolume = this.peerVolumes.get(peerId);
+        if (savedVolume !== undefined && this.rtcService.setPeerVolume) {
+          this.rtcService.setPeerVolume(peerId, savedVolume);
+          console.log(`[RoomManager] Applied saved volume ${savedVolume} for ${peerId}`);
+        }
+
         this.notifyStateChange();
       },
       onConnectionStateChange: (state) => {
@@ -337,12 +443,20 @@ export class RoomManager implements IRoomManager {
     try {
       this.audioContext = new AudioContext();
       const source = this.audioContext.createMediaStreamSource(this.localStream);
+
+      // Create gain node for microphone volume control
+      this.localGainNode = this.audioContext.createGain();
+      this.localGainNode.gain.value = this.microphoneGain;
+
       this.audioAnalyser = this.audioContext.createAnalyser();
       this.audioAnalyser.fftSize = 256;
       this.audioAnalyser.smoothingTimeConstant = 0.8;
-      source.connect(this.audioAnalyser);
 
-      console.log('[RoomManager] Audio level monitoring started');
+      // Route: source -> gain -> analyser (analyser for monitoring only, no output)
+      source.connect(this.localGainNode);
+      this.localGainNode.connect(this.audioAnalyser);
+
+      console.log(`[RoomManager] Audio level monitoring started with gain ${Math.round(this.microphoneGain * 100)}%`);
       this.startAudioLevelPolling();
     } catch (error) {
       console.error('[RoomManager] Error setting up audio level monitoring:', error);

@@ -1,0 +1,130 @@
+.display-name-editor {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 1.5rem;
+}
+
+.display-name-view {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.display-name-label {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+}
+
+.display-name-value {
+    font-size: 1rem;
+    color: #ffffff;
+    font-weight: 600;
+    flex: 1;
+}
+
+.edit-button {
+    padding: 0.5rem;
+    background: rgba(254, 160, 0, 0.1);
+    border: 1px solid rgba(254, 160, 0, 0.3);
+    border-radius: 8px;
+    color: #FEA000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-button:hover {
+    background: rgba(254, 160, 0, 0.2);
+    border-color: rgba(254, 160, 0, 0.5);
+    transform: translateY(-1px);
+}
+
+.edit-button:active {
+    transform: translateY(0);
+}
+
+.display-name-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.display-name-edit input {
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.display-name-edit input:focus {
+    border-color: #FEA000;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.display-name-edit input.error {
+    border-color: #ff4444;
+}
+
+.display-name-edit input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.error-message {
+    font-size: 0.75rem;
+    color: #ff4444;
+    margin-top: -0.5rem;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.save-button,
+.cancel-button {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.save-button {
+    background: linear-gradient(135deg, #FEA000 0%, #ff8800 100%);
+    color: #000000;
+}
+
+.save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(254, 160, 0, 0.3);
+}
+
+.cancel-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cancel-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.save-button:active,
+.cancel-button:active {
+    transform: translateY(0);
+}

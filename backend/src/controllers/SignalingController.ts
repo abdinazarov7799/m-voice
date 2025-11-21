@@ -1,17 +1,20 @@
 import { JoinRoomUseCase } from '../usecases/JoinRoomUseCase';
 import { LeaveRoomUseCase } from '../usecases/LeaveRoomUseCase';
 import { RelaySignalUseCase } from '../usecases/RelaySignalUseCase';
+import { UpdateDisplayNameUseCase } from '../usecases/UpdateDisplayNameUseCase';
 import {
   ClientMessage,
   ServerMessage,
   OfferMessage,
   AnswerMessage,
   IceCandidateMessage,
+  RTCIceServerConfig,
   isJoinMessage,
   isOfferMessage,
   isAnswerMessage,
   isIceCandidateMessage,
   isLeaveMessage,
+  isUpdateDisplayNameMessage,
 } from '../domain/types/SignalingMessages';
 
 export type SendMessageCallback = (recipientId: string, message: ServerMessage) => void;
@@ -21,12 +24,16 @@ export class SignalingController {
     private readonly joinRoomUseCase: JoinRoomUseCase,
     private readonly leaveRoomUseCase: LeaveRoomUseCase,
     private readonly relaySignalUseCase: RelaySignalUseCase,
-  ) {}
+    private readonly updateDisplayNameUseCase: UpdateDisplayNameUseCase,
+    private readonly iceServers: RTCIceServerConfig[],
+  ) { }
 
   handleMessage(clientId: string, message: ClientMessage, sendMessage: SendMessageCallback, roomId?: string): void {
     try {
       if (isJoinMessage(message)) {
         this.handleJoin(clientId, message, sendMessage);
+      } else if (isUpdateDisplayNameMessage(message)) {
+        this.handleUpdateDisplayName(clientId, message, sendMessage, roomId);
       } else if (isOfferMessage(message) || isAnswerMessage(message) || isIceCandidateMessage(message)) {
         this.handleSignalingMessage(clientId, message, sendMessage, roomId);
       } else if (isLeaveMessage(message)) {
@@ -78,6 +85,7 @@ export class SignalingController {
       type: 'joined',
       youId: clientId,
       participants: result.existingParticipants.map((p) => p.toJSON()),
+      iceServers: this.iceServers,
     });
 
     result.existingParticipants.forEach((participant) => {
@@ -92,7 +100,7 @@ export class SignalingController {
 
     console.log(
       `[SignalingController] Client ${clientId} joined room ${message.roomId}. ` +
-        `Total participants: ${result.room.getParticipantCount()}`,
+      `Total participants: ${result.room.getParticipantCount()}`,
     );
   }
 
@@ -135,6 +143,41 @@ export class SignalingController {
       type: 'error',
       message,
     });
+  }
+
+  private handleUpdateDisplayName(
+    clientId: string,
+    message: { type: 'update-display-name'; from: string; displayName: string },
+    sendMessage: SendMessageCallback,
+    roomId?: string,
+  ): void {
+    if (!roomId) {
+      this.sendError(clientId, 'Not in a room', sendMessage);
+      return;
+    }
+
+    const result = this.updateDisplayNameUseCase.execute(roomId, message.from, message.displayName);
+
+    if (!result.success) {
+      this.sendError(clientId, result.error || 'Failed to update display name', sendMessage);
+      return;
+    }
+
+    // Broadcast to all participants in the room (including sender)
+    const room = this.updateDisplayNameUseCase['roomRepository'].findRoom(roomId);
+    if (room) {
+      room.getAllParticipants().forEach((participant) => {
+        sendMessage(participant.id, {
+          type: 'display-name-updated',
+          participantId: result.participantId,
+          displayName: result.displayName,
+        });
+      });
+
+      console.log(
+        `[SignalingController] Updated display name for ${result.participantId} to "${result.displayName}"`,
+      );
+    }
   }
 }
 

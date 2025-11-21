@@ -1,0 +1,211 @@
+.audio-settings {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 1.5rem;
+}
+
+.audio-settings-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 1.5rem 0;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setting-item:last-of-type {
+    border-bottom: none;
+}
+
+.setting-header {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.setting-header label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.setting-icon {
+    font-size: 1.25rem;
+}
+
+.setting-description {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.setting-value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #FEA000;
+    min-width: 4rem;
+    text-align: right;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 28px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider:before {
+    content: '';
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background: linear-gradient(135deg, #FEA000 0%, #ff8800 100%);
+}
+
+.toggle-switch input:checked+.toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-switch:hover .toggle-slider {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.toggle-switch input:checked:hover+.toggle-slider {
+    background: linear-gradient(135deg, #ffb020 0%, #ff9920 100%);
+}
+
+/* Gain Slider */
+.gain-slider {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    border-radius: 3px;
+    margin-top: 0.75rem;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.gain-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #FEA000 0%, #ff8800 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(254, 160, 0, 0.4);
+}
+
+.gain-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #FEA000 0%, #ff8800 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(254, 160, 0, 0.4);
+}
+
+.gain-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 3px 8px rgba(254, 160, 0, 0.6);
+}
+
+.gain-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 3px 8px rgba(254, 160, 0, 0.6);
+}
+
+.gain-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(to right,
+            rgba(254, 160, 0, 0.2) 0%,
+            rgba(254, 160, 0, 0.3) 50%,
+            rgba(254, 160, 0, 0.4) 100%);
+    border-radius: 3px;
+    height: 6px;
+}
+
+.gain-slider::-moz-range-track {
+    background: linear-gradient(to right,
+            rgba(254, 160, 0, 0.2) 0%,
+            rgba(254, 160, 0, 0.3) 50%,
+            rgba(254, 160, 0, 0.4) 100%);
+    border-radius: 3px;
+    height: 6px;
+    border: none;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Info Box */
+.settings-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(254, 160, 0, 0.1);
+    border: 1px solid rgba(254, 160, 0, 0.2);
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.info-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.info-text {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+}

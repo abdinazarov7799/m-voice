@@ -11,6 +11,9 @@ interface PeerConnectionState {
   ignoreOffer: boolean;
   isSettingRemoteAnswerPending: boolean;
   isNegotiating: boolean;
+  audioContext?: AudioContext;
+  gainNode?: GainNode;
+  volume: number; // 0.0 to 2.0
 }
 
 export class RTCAdapter implements IRTCService {
@@ -40,6 +43,7 @@ export class RTCAdapter implements IRTCService {
       ignoreOffer: false,
       isSettingRemoteAnswerPending: false,
       isNegotiating: false,
+      volume: 1.0, // Default volume
     };
 
     this.peerConnections.set(peerId, state);
@@ -61,6 +65,8 @@ export class RTCAdapter implements IRTCService {
     connection.ontrack = (event) => {
       console.log(`[RTCAdapter] Received remote track from ${peerId}`);
       if (event.streams && event.streams[0]) {
+        // Set up audio routing with gain control
+        this.setupAudioRouting(peerId, event.streams[0]);
         callbacks.onTrack(event.streams[0]);
       }
     };
@@ -240,6 +246,54 @@ export class RTCAdapter implements IRTCService {
       console.log(`[RTCAdapter] Replaced ${track.kind} track for ${peerId}`);
     } else {
       console.warn(`[RTCAdapter] No sender found for ${track.kind} track for ${peerId}`);
+    }
+  }
+
+  setPeerVolume(peerId: string, volume: number): void {
+    const state = this.peerConnections.get(peerId);
+    if (!state) {
+      console.warn(`[RTCAdapter] No peer connection found for ${peerId}`);
+      return;
+    }
+
+    // Clamp volume between 0 and 2
+    state.volume = Math.max(0, Math.min(2, volume));
+
+    if (state.gainNode) {
+      state.gainNode.gain.value = state.volume;
+      console.log(`[RTCAdapter] Set volume for ${peerId} to ${state.volume}`);
+    }
+  }
+
+  getPeerVolume(peerId: string): number {
+    const state = this.peerConnections.get(peerId);
+    return state?.volume ?? 1.0;
+  }
+
+  private setupAudioRouting(peerId: string, stream: MediaStream): void {
+    const state = this.peerConnections.get(peerId);
+    if (!state) return;
+
+    try {
+      // Create AudioContext if needed
+      if (!state.audioContext) {
+        state.audioContext = new AudioContext();
+      }
+
+      // Create source from remote stream
+      const source = state.audioContext.createMediaStreamSource(stream);
+
+      // Create gain node for volume control
+      state.gainNode = state.audioContext.createGain();
+      state.gainNode.gain.value = state.volume;
+
+      // Connect: source -> gain -> destination
+      source.connect(state.gainNode);
+      state.gainNode.connect(state.audioContext.destination);
+
+      console.log(`[RTCAdapter] Set up audio routing with volume control for ${peerId}`);
+    } catch (error) {
+      console.error(`[RTCAdapter] Error setting up audio routing for ${peerId}:`, error);
     }
   }
 }

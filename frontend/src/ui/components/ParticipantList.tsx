@@ -1,15 +1,20 @@
 import React from 'react';
 import { Participant } from '../../domain/entities/Participant';
+import { ParticipantCard } from './ParticipantCard';
 import './ParticipantList.css';
 
 interface ParticipantListProps {
   participants: Participant[];
   localParticipantId: string;
+  onVolumeChange: (participantId: string, volume: number) => void;
+  getVolume: (participantId: string) => number;
 }
 
 export const ParticipantList: React.FC<ParticipantListProps> = ({
   participants,
   localParticipantId,
+  onVolumeChange,
+  getVolume,
 }) => {
   if (participants.length === 0) {
     return (
@@ -20,30 +25,22 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
   }
 
   return (
-    <ul className="participant-list" role="list">
+    <div className="participant-list">
       {participants.map((participant) => {
         const isLocal = participant.id === localParticipantId;
+        const volume = isLocal ? 1.0 : getVolume(participant.id);
 
         return (
-          <li
+          <ParticipantCard
             key={participant.id}
-            className={`participant-item ${isLocal ? 'local' : 'remote'}`}
-          >
-            <div className="participant-avatar">
-              {isLocal ? '👤' : '🎧'}
-            </div>
-            <div className="participant-info">
-              <span className="participant-name">
-                {participant.getDisplayLabel()}
-              </span>
-              <span className="participant-status">
-                {isLocal ? 'You' : 'Connected'}
-              </span>
-            </div>
-          </li>
+            participant={participant}
+            isLocal={isLocal}
+            volume={volume}
+            onVolumeChange={(vol) => onVolumeChange(participant.id, vol)}
+          />
         );
       })}
-    </ul>
+    </div>
   );
 };
 

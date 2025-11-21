@@ -7,6 +7,8 @@ import { Controls } from '../components/Controls';
 import { AudioLevelIndicator } from '../components/AudioLevelIndicator';
 import { DeviceSelector } from '../components/DeviceSelector';
 import { RemoteAudio } from '../components/RemoteAudio';
+import { DisplayNameEditor } from '../components/DisplayNameEditor';
+import { AudioSettings } from '../components/AudioSettings';
 import './Room.css';
 
 export const Room: React.FC = () => {
@@ -19,6 +21,9 @@ export const Room: React.FC = () => {
   const [isJoining, setIsJoining] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [outputDeviceId, setOutputDeviceId] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>(() => {
+    return localStorage.getItem('m-voice-display-name') || '';
+  });
 
   useEffect(() => {
     if (!roomId) {
@@ -99,6 +104,28 @@ export const Room: React.FC = () => {
     roomManager.setOutputDevice(deviceId);
   };
 
+  const handleVolumeChange = (participantId: string, volume: number) => {
+    roomManager.setRemotePeerVolume(participantId, volume);
+  };
+
+  const getParticipantVolume = (participantId: string): number => {
+    return roomManager.getRemotePeerVolume(participantId);
+  };
+
+  const handleDisplayNameUpdate = (newName: string) => {
+    setDisplayName(newName);
+    roomManager.updateDisplayName(newName);
+  };
+
+  const handleNoiseSuppressionChange = (enabled: boolean) => {
+    console.log(`[Room] Noise suppression ${enabled ? 'enabled' : 'disabled'}`);
+    // Note: Changes will apply on next getUserMedia call or room rejoin
+  };
+
+  const handleMicrophoneGainChange = (gain: number) => {
+    roomManager.setMicrophoneGain(gain);
+  };
+
   if (error) {
     return (
       <div className="room-container">
@@ -164,6 +191,14 @@ export const Room: React.FC = () => {
 
         {showSettings && (
           <section className="settings-section">
+            <DisplayNameEditor
+              currentDisplayName={displayName}
+              onUpdate={handleDisplayNameUpdate}
+            />
+            <AudioSettings
+              onNoiseSuppressionChange={handleNoiseSuppressionChange}
+              onMicrophoneGainChange={handleMicrophoneGainChange}
+            />
             <DeviceSelector
               onInputDeviceChange={handleInputDeviceChange}
               onOutputDeviceChange={handleOutputDeviceChange}
@@ -179,6 +214,8 @@ export const Room: React.FC = () => {
             <ParticipantList
               participants={roomState.participants}
               localParticipantId={roomState.localParticipantId}
+              onVolumeChange={handleVolumeChange}
+              getVolume={getParticipantVolume}
             />
           </section>
 

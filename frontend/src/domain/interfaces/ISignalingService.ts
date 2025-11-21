@@ -1,11 +1,12 @@
 export type SignalingMessage =
-  | { type: 'joined'; youId: string; participants: Array<{ id: string; displayName?: string }> }
+  | { type: 'joined'; youId: string; participants: Array<{ id: string; displayName?: string }>; iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }> }
   | { type: 'participant-joined'; participant: { id: string; displayName?: string } }
   | { type: 'participant-left'; id: string }
   | { type: 'offer'; from: string; to: string; sdp: string }
   | { type: 'answer'; from: string; to: string; sdp: string }
   | { type: 'ice-candidate'; from: string; to: string; candidate: RTCIceCandidateInit }
-  | { type: 'error'; message: string; code?: string };
+  | { type: 'error'; message: string }
+  | { type: 'display-name-updated'; participantId: string; displayName: string };
 
 export interface ISignalingService {
   connect(url: string): Promise<void>;
@@ -21,6 +22,8 @@ export interface ISignalingService {
   sendIceCandidate(to: string, from: string, candidate: RTCIceCandidateInit): void;
 
   leaveRoom(participantId: string): void;
+
+  updateDisplayName(from: string, displayName: string): void;
 
   onMessage(callback: (message: SignalingMessage) => void): void;
 

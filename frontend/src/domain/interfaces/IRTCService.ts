@@ -34,5 +34,9 @@ export interface IRTCService {
   getActivePeerIds(): string[];
 
   replaceTrack(peerId: string, track: MediaStreamTrack): Promise<void>;
+
+  setPeerVolume(peerId: string, volume: number): void;
+
+  getPeerVolume(peerId: string): number;
 }
 

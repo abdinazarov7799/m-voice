@@ -3,6 +3,7 @@ import { RoomRepositoryInMemory } from './infrastructure/RoomRepositoryInMemory'
 import { JoinRoomUseCase } from './usecases/JoinRoomUseCase';
 import { LeaveRoomUseCase } from './usecases/LeaveRoomUseCase';
 import { RelaySignalUseCase } from './usecases/RelaySignalUseCase';
+import { UpdateDisplayNameUseCase } from './usecases/UpdateDisplayNameUseCase';
 import { SignalingController } from './controllers/SignalingController';
 import { WSServer } from './infrastructure/WSServer';
 
@@ -18,12 +19,36 @@ function bootstrap(): void {
   const joinRoomUseCase = new JoinRoomUseCase(roomRepository);
   const leaveRoomUseCase = new LeaveRoomUseCase(roomRepository);
   const relaySignalUseCase = new RelaySignalUseCase(roomRepository);
+  const updateDisplayNameUseCase = new UpdateDisplayNameUseCase(roomRepository);
   console.log('✓ Use cases initialized');
+
+  // Build ICE servers configuration from environment variables
+  const iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }> = [];
+
+  // Always include STUN server
+  const stunServer = process.env['STUN_SERVER'] || 'stun:stun.l.google.com:19302';
+  iceServers.push({ urls: stunServer });
+
+  // Add TURN server if configured
+  if (process.env['TURN_SERVER']) {
+    const turnConfig: { urls: string | string[]; username?: string; credential?: string } = {
+      urls: process.env['TURN_SERVER'],
+    };
+    if (process.env['TURN_USERNAME']) {
+      turnConfig.username = process.env['TURN_USERNAME'];
+    }
+    if (process.env['TURN_PASSWORD']) {
+      turnConfig.credential = process.env['TURN_PASSWORD'];
+    }
+    iceServers.push(turnConfig);
+  }
 
   const signalingController = new SignalingController(
     joinRoomUseCase,
     leaveRoomUseCase,
     relaySignalUseCase,
+    updateDisplayNameUseCase,
+    iceServers,
   );
   console.log('✓ Signaling controller initialized');
 
@@ -54,4 +79,3 @@ function bootstrap(): void {
 }
 
 bootstrap();
-

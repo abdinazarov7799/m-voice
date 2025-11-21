@@ -25,24 +25,24 @@ services:
       - m-voice-net
     restart: unless-stopped
 
-#  coturn:
-#    image: coturn/coturn
-#    ports:
-#      - "3478:3478/tcp"
-#      - "3478:3478/udp"
-#      - "49152-49252:49152-49252/udp"
-#    environment:
-#      - DETECT_EXTERNAL_IP=yes
-#      - DETECT_RELAY_IP=yes
-#      - LISTENING_PORT=3478
-#      - MIN_PORT=49152
-#      - MAX_PORT=49252
-#      - REALM=m-voice.local
-#      - USERNAME=myuser
-#      - PASSWORD=mypassword
-#    networks:
-#      - m-voice-net
-#    restart: unless-stopped
+  coturn:
+    image: coturn/coturn:latest
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49152-49252:49152-49252/udp"
+    environment:
+      - DETECT_EXTERNAL_IP=yes
+      - DETECT_RELAY_IP=yes
+      - LISTENING_PORT=3478
+      - MIN_PORT=49152
+      - MAX_PORT=49252
+      - REALM=m-voice.local
+      - USERNAME=myuser
+      - PASSWORD=mypassword
+    networks:
+      - m-voice-net
+    restart: unless-stopped
 
 networks:
   m-voice-net:

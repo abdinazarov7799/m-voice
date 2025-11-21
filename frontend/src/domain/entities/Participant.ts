@@ -5,14 +5,25 @@ export interface ParticipantData {
 }
 
 export class Participant {
+  private _displayName: string | undefined;
+
   constructor(
     public readonly id: string,
-    public readonly displayName: string | undefined,
+    displayName: string | undefined,
     public readonly isLocal: boolean,
   ) {
     if (!id || id.trim().length === 0) {
       throw new Error('Participant ID cannot be empty');
     }
+    this._displayName = displayName;
+  }
+
+  get displayName(): string | undefined {
+    return this._displayName;
+  }
+
+  setDisplayName(newDisplayName: string): void {
+    this._displayName = newDisplayName;
   }
 
   static fromJSON(data: { id: string; displayName?: string }, isLocal = false): Participant {
